@@ -2,7 +2,7 @@
 
 **Rethinking Vision Architectures with Gated Linear Attention and KAN**
 
-Paper: [arXiv:2609.22506](https://arxiv.org/abs/2609.22506) · Code: [GitHub](https://github.com/mehizelali/linear-kan-transformer) · Project page: https://mehizelali.github.io/linear-kan-transformer/
+Paper: [arXiv:2609.22506](https://arxiv.org/abs/2609.22506) · Code: [GitHub](https://github.com/mehizelali/linear-kan-transformer)
 
 ## Abstract
 
