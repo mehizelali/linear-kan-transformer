@@ -1,0 +1,18 @@
+# This host's NVIDIA driver is CUDA 12.8. PyPI's latest torch is cu130 and
+# will fail with "NVIDIA driver is too old (found version 12080)".
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+timm>=0.9.0
+einops>=0.7.0
+PyYAML>=6.0
+numpy>=1.23
+pyarrow>=14.0
+tqdm>=4.65
+# import name is `fla` — not `pip install fla`
+# 0.6.0 is on GitHub main; PyPI latest may still be 0.5.2:
+#   pip install "git+https://github.com/fla-org/flash-linear-attention.git"
+flash-linear-attention[cuda]>=0.6.0
+transformers>=4.40.0
+huggingface_hub>=0.23.0
+datasets>=2.19.0

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LKAT — Rethinking Vision Architectures with Gated Linear Attention and KAN</title>
+  <meta
+    name="description"
+    content="LKAT (Linear Kolmogorov–Arnold Transformer): Gated Linear Attention + RBF-KAN for vision. arXiv:2609.22506"
+  />
+  <meta property="og:title" content="LKAT — Gated Linear Attention and KAN" />
+  <meta
+    property="og:description"
+    content="Rethinking Vision Architectures with Gated Linear Attention and KAN (arXiv:2609.22506)."
+  />
+  <meta property="og:image" content="assets/lkat2.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Syne:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="nav-brand" href="#top">LKAT</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#abstract">Abstract</a>
+        <a href="#method">Method</a>
+        <a href="#experiments">Experiments</a>
+        <a href="#citation">Cite</a>
+        <a href="https://arxiv.org/abs/2609.22506">Paper</a>
+        <a class="btn btn-solid" href="https://github.com/mehizelali/linear-kan-transformer">Code</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Paper title block -->
+    <section class="hero">
+      <div class="wrap paper-title">
+        <p class="hero-kicker reveal">arXiv:2609.22506 · cs.CV</p>
+        <h1 class="paper-h1 reveal reveal-delay-1">
+          Rethinking Vision Architectures with Gated Linear Attention and KAN
+        </h1>
+        <p class="authors reveal reveal-delay-1">
+          <strong>Ali Mehizel</strong><sup>1</sup> ·
+          <strong>Oussama Khaldi</strong><sup>2</sup>
+        </p>
+        <p class="affiliations reveal reveal-delay-2">
+          <sup>1</sup>ENSSEA ·
+          <sup>2</sup>Université Paris Cité
+        </p>
+        <div class="hero-actions reveal reveal-delay-2">
+          <a class="btn btn-solid" href="https://arxiv.org/pdf/2609.22506">PDF</a>
+          <a class="btn btn-ghost" href="https://arxiv.org/abs/2609.22506">arXiv</a>
+          <a class="btn btn-ghost" href="https://github.com/mehizelali/linear-kan-transformer">Code</a>
+          <a class="btn btn-ghost" href="#citation">BibTeX</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Abstract -->
+    <section class="section" id="abstract">
+      <div class="wrap">
+        <p class="section-label reveal">Abstract</p>
+        <p class="section-copy abstract-text reveal reveal-delay-1">
+          Vision Transformers devote most of their parameters to MLPs for channel mixing,
+          but still rely on quadratic multi-head self-attention for token interactions.
+          While linear attention fixes the complexity problem, bringing it down to O(N),
+          it is usually just paired with the same fixed-activation MLP as before.
+          Kolmogorov–Arnold Networks place learnable univariate functions on the edges
+          instead; however, existing vision KANs either retain standard attention or
+          remove attention entirely. We introduce <em>LKAT</em> (Linear Kolmogorov–Arnold
+          Transformer) to close this gap: an isotropic ViT-style encoder that couples
+          chunk-wise Gated Linear Attention with a two-layer KAN feed-forward block,
+          backed by an I/O-aware fused RBF–KAN kernel. Under a shared DeiT-style recipe,
+          LKAT-B outperforms ViT-B/16, ViT-5-B, and Mixer-B/16 on ImageNet-100; Tiny,
+          Small, and Base variants scale consistently on CIFAR-10/100, with effective
+          transfer from ImageNet-100 pretraining.
+        </p>
+      </div>
+    </section>
+
+    <!-- 1 Introduction / contributions -->
+    <section class="section" id="intro">
+      <div class="wrap">
+        <p class="section-label reveal">1 &nbsp; Introduction</p>
+        <h2 class="section-title reveal reveal-delay-1">Two redesigns of the ViT block.</h2>
+        <p class="section-copy reveal reveal-delay-2">
+          We keep a flat ViT-style topology and redesign both operators: replace MHSA with
+          chunk-wise Gated Linear Attention (via FLA), and replace the MLP with a two-layer
+          RBF-KAN, implemented as fused Triton kernels so the radial grid stays practical.
+        </p>
+        <ul class="contrib reveal reveal-delay-2">
+          <li><strong>LKAT</strong> — ViT architecture with GLA + two-layer KAN feed-forward.</li>
+          <li><strong>Fused RBF–KAN</strong> — I/O-aware Triton kernels for radial-basis grid maps.</li>
+          <li><strong>Mid-scale eval</strong> — CIFAR-10/100 and ImageNet-100 vs ViT, ViT-5, Mixer; CIFAR fine-tuning from ImageNet-100.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2 Method -->
+    <section class="section" id="method">
+      <div class="wrap">
+        <p class="section-label reveal">2 &nbsp; Method</p>
+        <h2 class="section-title reveal reveal-delay-1">Linear Kolmogorov–Arnold Transformer</h2>
+        <p class="section-copy reveal reveal-delay-2">
+          Patch embedding feeds N pre-norm blocks: LayerNorm → GLA (per-head RMSNorm on Q/K,
+          2D RoPE on patches) → residual; LayerNorm → two-layer RBF-KAN → residual.
+          A linear head reads the final class token.
+        </p>
+
+        <figure class="figure figure-lg figure-center reveal">
+          <img src="assets/lkat2.png" alt="LKAT architecture" width="720" height="400" />
+          <figcaption>Figure 2 — LKAT architecture (GLA + RBF-KAN blocks).</figcaption>
+        </figure>
+
+        <div class="split reveal" style="margin-top: 1.5rem">
+          <div>
+            <h3 class="subhead">Channel-mixing variant</h3>
+            <p class="section-copy" style="margin-top: 0.4rem">
+              A gated residual around the RBF–KAN block further improves ImageNet-100 Acc@1
+              relative to the default feed-forward path.
+            </p>
+          </div>
+          <figure class="figure figure-sm">
+            <img src="assets/gating_kan.png" alt="Gated residual around RBF-KAN" width="360" height="240" />
+            <figcaption>Figure 5 — Gated residual on RBF–KAN.</figcaption>
+          </figure>
+        </div>
+
+        <h3 class="subhead reveal" style="margin-top: 1.5rem">Fused RBF–grid linear kernels</h3>
+        <p class="section-copy reveal">
+          Following FastKAN, edge functions use a Gaussian RBF grid. We fuse the weighted
+          basis sum in Triton to avoid materializing the intermediate […, D, G] tensor in HBM —
+          cutting peak memory and improving wall-clock vs an unfused torch baseline.
+        </p>
+        <div class="media-row reveal">
+          <figure class="figure">
+            <img src="assets/fig_rbf_mem_fwd_bwd.png" alt="Peak memory reduction" width="640" height="360" />
+            <figcaption>Figure 1 — Peak memory reduction (fwd+bwd).</figcaption>
+          </figure>
+          <figure class="figure">
+            <img src="assets/fig_rbf_speedup_fwd_bwd.png" alt="Wall-clock speedup" width="640" height="360" />
+            <figcaption>Figure 8 — End-to-end wall-clock speedup.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Experiments -->
+    <section class="section" id="experiments">
+      <div class="wrap">
+        <p class="section-label reveal">3 &nbsp; Experiments</p>
+        <h2 class="section-title reveal reveal-delay-1">Image classification</h2>
+        <p class="section-copy reveal reveal-delay-2">
+          Shared DeiT-style recipe. LKAT-T/S/B/L scale monotonically with capacity on
+          CIFAR-10/100 and ImageNet-100. Among Base models on ImageNet-100, LKAT-B exceeds
+          ViT-B/16, ViT-5-B, and Mixer-B/16.
+        </p>
+
+        <figure class="figure figure-md figure-center reveal" style="margin-top: 1rem">
+          <img
+            src="assets/scaling_imagenet100_acc_vs_gflops.png"
+            alt="ImageNet-100 Acc@1 vs GFLOPs"
+            width="720"
+            height="480"
+          />
+          <figcaption>Figure 4 — ImageNet-100 Top-1 Acc@1 versus GFLOPs (224²).</figcaption>
+        </figure>
+
+        <div class="media-row reveal" style="margin-top: 1rem">
+          <figure class="figure">
+            <img
+              src="assets/scaling_cifar10_acc_vs_gflops.png"
+              alt="CIFAR-10 Acc@1 vs GFLOPs"
+              width="640"
+              height="420"
+            />
+            <figcaption>Figure 6 — CIFAR-10 Acc@1 vs GFLOPs.</figcaption>
+          </figure>
+          <figure class="figure">
+            <img
+              src="assets/scaling_cifar100_acc_vs_gflops.png"
+              alt="CIFAR-100 Acc@1 vs GFLOPs"
+              width="640"
+              height="420"
+            />
+            <figcaption>Figure 7 — CIFAR-100 Acc@1 vs GFLOPs.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6–7 Discussion / Conclusion -->
+    <section class="section" id="discussion">
+      <div class="wrap">
+        <p class="section-label reveal">6–7 &nbsp; Discussion &amp; Conclusion</p>
+        <h2 class="section-title reveal reveal-delay-1">Complementary inductive biases.</h2>
+        <p class="section-copy reveal reveal-delay-2">
+          LKAT scales monotonically where plain ViT can plateau under the same mid-scale
+          recipe. Ablations show that a gated KAN residual and denser RBF grids help on
+          ImageNet-100; fine-tuning from ImageNet-100 yields large Acc@1 gains over
+          training from scratch. Gated linear attention and KAN-based radial bases are
+          complementary for mid-scale visual representation learning — motivating
+          ImageNet-1K scale-up under the same block design.
+        </p>
+      </div>
+    </section>
+
+    <!-- Code -->
+    <section class="section" id="code">
+      <div class="wrap">
+        <p class="section-label reveal">Code</p>
+        <h2 class="section-title reveal reveal-delay-1">Reproduce</h2>
+        <pre class="install reveal reveal-delay-2"><code>git clone https://github.com/mehizelali/linear-kan-transformer.git
+cd linear-kan-transformer
+pip install -r requirements.txt
+python train.py -c yaml/lkat_b_imagenet100.yaml</code></pre>
+        <div class="copy-row reveal reveal-delay-2">
+          <a class="btn btn-solid" href="https://github.com/mehizelali/linear-kan-transformer">GitHub repository</a>
+          <a class="btn btn-ghost" href="https://arxiv.org/pdf/2609.22506">Paper PDF</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Citation -->
+    <section class="section" id="citation">
+      <div class="wrap">
+        <p class="section-label reveal">Citation</p>
+        <h2 class="section-title reveal reveal-delay-1">BibTeX</h2>
+        <pre class="cite-block reveal reveal-delay-2" id="bibtex">@misc{mehizel2026lkat,
+  title         = {Rethinking Vision Architectures with Gated Linear Attention and {KAN}},
+  author        = {Mehizel, Ali and Khaldi, Oussama},
+  year          = {2026},
+  eprint        = {2609.22506},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url           = {https://arxiv.org/abs/2609.22506}
+}</pre>
+        <div class="copy-row reveal reveal-delay-2">
+          <button class="btn btn-solid" type="button" id="copy-cite">Copy BibTeX</button>
+        </div>
+        <p class="section-copy reveal">
+          Builds on
+          <a href="https://github.com/fla-org/flash-linear-attention">Flash Linear Attention</a>
+          and
+          <a href="https://arxiv.org/abs/2405.06721">FastKAN</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>
+        <strong>LKAT</strong> ·
+        <a href="https://arxiv.org/abs/2609.22506">arXiv:2609.22506</a>
+      </p>
+      <p>Acknowledgements: Ayoub Asri, Lizhong Chen, AI GRID</p>
+    </div>
+  </footer>
+
+  <script>
+    const reveals = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-in");
+              io.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.08 }
+      );
+      reveals.forEach((el) => io.observe(el));
+    } else {
+      reveals.forEach((el) => el.classList.add("is-in"));
+    }
+    document.querySelectorAll(".hero .reveal").forEach((el) => el.classList.add("is-in"));
+
+    const copyBtn = document.getElementById("copy-cite");
+    const bib = document.getElementById("bibtex");
+    copyBtn?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(bib.textContent.trim());
+        copyBtn.textContent = "Copied";
+        setTimeout(() => (copyBtn.textContent = "Copy BibTeX"), 1600);
+      } catch {
+        copyBtn.textContent = "Select & copy";
+      }
+    });
+  </script>
+</body>
+</html>
